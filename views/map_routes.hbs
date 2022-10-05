@@ -7,25 +7,22 @@
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="/style.css">
     <title>Document</title>
 </head>
 <body>
-    <style>
-        .mapboxgl-popup {
-        max-width: 400px;
-        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-        }
-    </style>
-    <div class="row">
-        <div class="container my-3">
-            <h6 class="diplay-4 text-left">Halfways for Route {{addressA}} - {{addressB}}</h6>
-            <a href="/">Go back</a>
-            <div id='map' style='width: 100%; height: 1000px;'></div>
-        </div>
-        <div class="container my-3">
-            <h5 class="diplay-4 text-left">Potential Halfways Meetups. Click on a marker for more information</h5>
-            <div id="halfways"></div>
-
+    <div>
+        <!--<div id='map' class="map"></div>-->
+        <a href="/">Go back</a>
+        <div>
+            
+            <div class='sidebar'>
+                <div class='heading'>
+                    <h4>Halfways for Route {{addressA}} - {{addressB}}</h4>
+                </div>
+                <div id='listings' class='listings' ></div>
+            </div>
         </div>
     </div>
     

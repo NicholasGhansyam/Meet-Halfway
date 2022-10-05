@@ -12,9 +12,9 @@ async function getHalfways(){
     //console.log(latToSearch,lonToSearch)
 
     //Fetch from the mapquest API 
-    const mapQuestRes = await fetch(`http://www.mapquestapi.com/search/v2/search?key=6iWF9qui3e4YKroiomuNSZ37iF8VmQ1b&maxMatches=10&shapePoints=${lonToSearch},${latToSearch}`)
+    const mapQuestRes = await fetch(`http://www.mapquestapi.com/search/v2/search?key=6iWF9qui3e4YKroiomuNSZ37iF8VmQ1b&maxMatches=15&shapePoints=${lonToSearch},${latToSearch}`)
     const mapQuestData = await mapQuestRes.json() 
-    //onsole.log(mapQuestData)
+    //console.log(mapQuestData)
 
     const halfways = mapQuestData.searchResults.map(halfway => {
         return {
@@ -25,13 +25,16 @@ async function getHalfways(){
             },
             
             properties:{
-                halfwayID: halfway.fields.name,
-                halfwayLink: `<p><a href="https://www.google.com/maps/search/?api=1&query=${halfway.fields.mqap_geography.latLng.lat}%2C${halfway.fields.mqap_geography.latLng.lng}" target="_blank" title="Opens in a new window"> ${halfway.fields.name}</a> <br> ${halfway.fields.address} ${halfway.fields.city} ${halfway.fields.state} ${halfway.fields.postal_code} <br> <br> <sup> Click the link to route to destination </sup></p>`
+                halfwayID: halfway.fields.id,
+                halfwayName: halfway.fields.name,
+                halfwayAddress: halfway.fields.address,
+                halfwayCity: halfway.fields.city,
+                halfwayLink: `https://www.google.com/maps/search/?api=1&query=${halfway.fields.mqap_geography.latLng.lat}%2C${halfway.fields.mqap_geography.latLng.lng}`
             }
         }
     })
     
-    setupMap([latToSearch,lonToSearch,],halfways)
+    setupMap([latToSearch,lonToSearch],halfways)
     
 }
 
@@ -39,10 +42,16 @@ async function getHalfways(){
 function setupMap(center,halfways){
     const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v11',
+        style: 'mapbox://styles/mapbox/light-v10',
         zoom: 12,
         center: center
     })
+
+        // disable map rotation using right click + drag
+    map.dragRotate.disable();
+    
+    // disable map rotation using touch rotation gesture
+    map.touchZoomRotate.disableRotation();
 
 
 
@@ -77,43 +86,115 @@ function setupMap(center,halfways){
                         'text-anchor': 'top'
                     }
                 });
+                
+                buildLocationList(halfways);
 
-                map.on('click', 'points', (e) => {
-                    console.log(`A click event has occurred at ${e.lngLat}`);
-
-                    console.log(e.features[0].properties.description);
-                    // Copy coordinates array.
-                    const coordinates = e.features[0].geometry.coordinates.slice();
-                    const description = e.features[0].properties.halfwayLink;
-                     
-                    // Ensure that if the map is zoomed out such that multiple
-                    // copies of the feature are visible, the popup appears
-                    // over the copy being pointed to.
-                    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-                    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-                    }
-                     
-                    new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML(description)
-                    .addTo(map);
-                    });
-                     
-                    // Change the cursor to a pointer when the mouse is over the places layer.
-                    map.on('mouseenter', 'points', () => {
-                    map.getCanvas().style.cursor = 'pointer';
-                    });
-                     
-                    // Change it back to a pointer when it leaves.
-                    map.on('mouseleave', 'points', () => {
-                    map.getCanvas().style.cursor = '';
-                    });
-                    
             }
         );
     })
 
+    map.on('click', (event) => {
+        
+        /* Determine if a feature in the "locations" layer exists at that point. */
+        const features = map.queryRenderedFeatures(event.point, {
+          layers: ['points']
+        });
+        console.log(features)
+        /* If it does not exist, return */
+        if (!features.length) return;
+      
+        const clickedPoint = features[0];
+      
+        /* Fly to the point */
+        //flyToHalfway(clickedPoint);
+        map.flyTo({
+            center: clickedPoint.geometry.coordinates,
+            zoom: 15
+        })
+      
+        /* Close all other popups and display popup for clicked store */
+        //createPopUp(clickedPoint);
+        const popUps = document.getElementsByClassName('mapboxgl-popup');
+        /** Check if there is already a popup on the map and if so, remove it */
+        if (popUps[0]) popUps[0].remove();
+        
+        const popup = new mapboxgl.Popup({ closeOnClick: false })
+        .setLngLat(clickedPoint.geometry.coordinates)
+        .setHTML(`<h3><a href="${clickedPoint.properties.halfwayLink}" target="_blank" title="Opens in a new window">${clickedPoint.properties.halfwayName}</a></h3><h4>${clickedPoint.properties.halfwayAddress}</h4><sup>Click address to route to destination</sup>`)
+        .addTo(map);
+    
+      
+        /* Highlight listing in sidebar (and remove highlight for all other listings) */
+      });
+
+          
+    const nav = new mapboxgl.NavigationControl()
+    map.addControl(nav)
+
 }
+
+
+function buildLocationList(halfways){
+    for (const halfway of halfways) {
+
+        /* Add a new listing section to the sidebar. */
+        const listings = document.getElementById('listings');
+        const listing = listings.appendChild(document.createElement('div'));
+        /* Assign a unique `id` to the listing. */
+
+        //const id = Math.floor(Math.random() * Date.now())
+        listing.id = `listing-${halfway.properties.halfwayID}`;
+        /* Assign the `item` class to each listing for styling. */
+        listing.className = 'item';
+    
+        /* Add the link to the individual listing created above. */
+        const link = listing.appendChild(document.createElement('a'));
+        link.href = '#';
+        link.className = 'title';
+        link.id = `link-${halfway.properties.halfwayID}`;
+        link.innerHTML = `${halfway.properties.halfwayName}`;
+    
+        /* Add details to the individual listing. */
+        const details = listing.appendChild(document.createElement('div'));
+        details.innerHTML = `${halfway.properties.halfwayAddress} ${halfway.properties.halfwayCity}`;
+
+        link.addEventListener('click', function () {
+            
+            for (const feature of halfways) {
+              if (this.id === `link-${feature.properties.HalfwayId}`) {
+                flyToStore(feature);
+                createPopUp(feature);
+              }
+            }
+            const activeItem = document.getElementsByClassName('active');
+            if (activeItem[0]) {
+              activeItem[0].classList.remove('active');
+            }
+            this.parentNode.classList.add('active');
+          });
+
+      }
+}
+
+function flyToHalfway(currentHalfway){
+    map.flyTo({
+        center: currentHalfway.geometry.coordinates,
+        zoom: 15
+    })
+}
+
+function createPopUp(currentFeature) {
+    const popUps = document.getElementsByClassName('mapboxgl-popup');
+    /** Check if there is already a popup on the map and if so, remove it */
+    if (popUps[0]) popUps[0].remove();
+  
+    const popup = new mapboxgl.Popup({ closeOnClick: false })
+      .setLngLat(currentFeature.geometry.coordinates)
+      .setHTML(`<h3>${currentFeature.properties.halfwayName}</h3><h4>${currentFeature.properties.halfwayAddress}</h4><h4>${currentFeature.properties.halfwayLink}</h4>`)
+      .addTo(map);
+}
+
+
 //setupMap()
 getHalfways()
 
