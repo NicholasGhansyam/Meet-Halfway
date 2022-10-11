@@ -70,7 +70,7 @@ function setupMap(center,halfways){
                 });
             
                 map.addLayer({
-                    'id': 'points',
+                    'id': 'location',
                     'type': 'symbol',
                     'source': 'points',
                     'layout': {
@@ -97,11 +97,14 @@ function setupMap(center,halfways){
         
         /* Determine if a feature in the "locations" layer exists at that point. */
         const features = map.queryRenderedFeatures(event.point, {
-          layers: ['points']
+          layers: ['location']
         });
-        console.log(features)
+        console.log(event.point)
         /* If it does not exist, return */
-        if (!features.length) return;
+        if (!features.length){
+            console.log("no features")
+            return;
+        } 
       
         const clickedPoint = features[0];
       
@@ -149,7 +152,8 @@ function buildLocationList(halfways){
     
         /* Add the link to the individual listing created above. */
         const link = listing.appendChild(document.createElement('a'));
-        link.href = '#';
+        link.href = `${halfway.properties.halfwayLink}`;
+        link.target = '_blank'
         link.className = 'title';
         link.id = `link-${halfway.properties.halfwayID}`;
         link.innerHTML = `${halfway.properties.halfwayName}`;
